@@ -23,32 +23,22 @@ let bot = null;
 
 if (telegramToken && chatId) {
   bot = new TelegramBot(telegramToken, { polling: false });
-  console.log('Telegram 机器人已初始化');
 } else {
   console.warn('Telegram 环境变量未设置，推送功能已禁用');
 }
 
-// 增强的日志函数（收集日志并可选推送到Telegram）
-async function log(message, sendTelegram = false) {
+// 日志函数（只收集日志，不实时推送）
+function log(message) {
   const timestamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
   const logMessage = `[${timestamp}] ${message}`;
   
   // 添加到日志收集器
   logs.push(logMessage);
   console.log(logMessage);
-  
-  // 实时推送到Telegram（如果指定）
-  if (sendTelegram && bot) {
-    try {
-      await bot.sendMessage(chatId, logMessage);
-    } catch (error) {
-      console.error('Telegram 实时推送失败:', error.message);
-    }
-  }
 }
 
-// 发送完整日志到Telegram
-async function sendLogsToTelegram() {
+// 发送完整日志到Telegram（一次性推送）
+async function sendLogsToTelegram(status = 'completed') {
   if (!bot || logs.length === 0) return;
   
   try {
@@ -56,37 +46,47 @@ async function sendLogsToTelegram() {
     const endTime = new Date();
     const duration = Math.round((endTime - startTime) / 1000);
     
-    // 创建日志摘要
-    const summary = logs
-      .filter(log => log.includes('成功') || log.includes('失败') || log.includes('错误'))
-      .join('\n');
+    // 创建摘要
+    const summary = logs.filter(log => 
+      log.includes('成功') || 
+      log.includes('失败') || 
+      log.includes('错误') ||
+      log.includes('开始') ||
+      log.includes('完成')
+    ).join('\n');
+    
+    // 创建报告标题
+    const statusEmoji = status === 'completed' ? '✅' : '❌';
+    const title = status === 'completed' ? '任务完成' : '任务出错';
     
     // 创建完整报告
     const report = `
-📊 *任务报告*
+${statusEmoji} *${title}报告*
 ⏱️ 运行时长: ${duration} 秒
 📝 日志条目: ${logs.length} 条
 
-📋 *关键摘要*
+📋 *执行摘要*
 ${summary}
-
-📂 *完整日志*
-完整日志请查看下方文件⬇️
     `;
-    
-    // 发送摘要
-    await bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
     
     // 创建日志文件内容
     const logContent = logs.join('\n');
     
-    // 将日志作为文件发送（避免消息过长）
-    await bot.sendDocument(chatId, Buffer.from(logContent), {}, {
-      filename: `hostloc-logs-${format(startTime, 'yyyyMMdd-HHmmss')}.txt`,
-      contentType: 'text/plain'
-    });
+    // 发送报告
+    await bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
     
-    log('✅ 日志已成功发送到 Telegram');
+    // 将日志作为文件发送
+    await bot.sendDocument(
+      chatId, 
+      Buffer.from(logContent), 
+      {}, 
+      {
+        filename: `hostloc-logs-${format(startTime, 'yyyyMMdd-HHmmss')}.txt`,
+        contentType: 'text/plain'
+      }
+    );
+    
+    console.log('✅ 日志已成功发送到 Telegram');
   } catch (error) {
     console.error('发送日志到 Telegram 失败:', error.message);
   }
@@ -106,9 +106,9 @@ ${summary}
       throw new Error('请设置 HOSTLOC_USERNAME 和 HOSTLOC_PASSWORD 环境变量');
     }
 
-    // 本地测试时显示浏览器
+    // 记录开始信息
     log(`运行模式: ${isLocal ? '本地测试' : '生产环境'}`);
-    await log('🚀 开始执行 hostloc 自动任务', true);
+    log('🚀 开始执行 hostloc 自动任务');
 
     // 启动浏览器
     log('启动浏览器...');
@@ -127,7 +127,7 @@ ${summary}
     const page = await browser.newPage();
     
     // 设置更长的超时时间
-    await page.setDefaultNavigationTimeout(120000); // 120秒
+    await page.setDefaultNavigationTimeout(120000);
 
     // 访问hostloc并登录
     log('访问hostloc论坛...');
@@ -146,25 +146,20 @@ ${summary}
       page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 })
     ]);
 
-    // 检查用户空间链接是否存在以确认登录成功
+    // 检查登录状态
     log('验证登录状态...');
     const loggedIn = await page.evaluate(() => {
       return !!document.querySelector('a[href^="space-uid-"][title="访问我的空间"]');
     });
     
     if (!loggedIn) {
-      // 尝试截图帮助调试
-      if (isLocal) {
-        await page.screenshot({ path: 'login-failure.png' });
-        log('已保存登录失败截图: login-failure.png');
-      }
       throw new Error('登录失败，未找到用户空间链接');
     }
     
-    await log('✅ 登录成功!', true);
+    log('✅ 登录成功!');
 
     // 访问用户空间
-    await log('🔄 开始随机访问20个用户空间...', true);
+    log('🔄 开始随机访问20个用户空间...');
     let successCount = 0;
     let failCount = 0;
 
@@ -191,41 +186,51 @@ ${summary}
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    // 任务完成报告
-    const report = `
+    // 任务完成
+    log(`
 ✅ 任务完成!
 =========================
 成功访问: ${successCount} 次
 失败访问: ${failCount} 次
 总用时: ${Math.round((new Date() - startTime) / 1000)} 秒
 =========================
-`;
+`);
     
-    await log(report, true);
     await browser.close();
     log('浏览器已关闭');
 
-    // 发送完整日志到Telegram
-    await sendLogsToTelegram();
+    // 发送完整日志到Telegram（成功状态）
+    await sendLogsToTelegram('completed');
     
     log('任务完成');
 
   } catch (error) {
-    const errorMsg = `❌ 发生严重错误: ${error.message}`;
-    await log(errorMsg, true);
+    // 记录错误
+    log(`❌ 发生严重错误: ${error.message}`);
     console.error(error);
     
     // 确保浏览器被关闭
     if (browser) {
       try {
         await browser.close();
+        log('浏览器已关闭');
       } catch (e) {
-        console.error('关闭浏览器时出错:', e.message);
+        log(`关闭浏览器时出错: ${e.message}`);
       }
     }
     
-    // 发送错误日志到Telegram
-    await sendLogsToTelegram();
+    // 添加错误摘要
+    log(`
+❌ 任务失败!
+=========================
+错误信息: ${error.message}
+日志条目: ${logs.length} 条
+运行时间: ${Math.round((new Date() - startTime) / 1000)} 秒
+=========================
+`);
+    
+    // 发送完整日志到Telegram（错误状态）
+    await sendLogsToTelegram('error');
     
     process.exit(1);
   }
