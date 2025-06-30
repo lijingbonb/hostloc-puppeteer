@@ -69,28 +69,14 @@ ${statusEmoji} *${title}报告*
 ${summary}
     `;
     
-    // 创建日志文件内容
-    const logContent = logs.join('\n');
-    
     // 发送报告
     await bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
     
-//     // 将日志作为文件发送
-//     await bot.sendDocument(
-//       chatId, 
-//       Buffer.from(logContent), 
-//       {}, 
-//       {
-//         filename: `hostloc-logs-${format(startTime, 'yyyyMMdd-HHmmss')}.txt`,
-//         contentType: 'text/plain'
-//       }
-//     );
-    
-//     console.log('✅ 日志已成功发送到 Telegram');
-//   } catch (error) {
-//     console.error('发送日志到 Telegram 失败:', error.message);
-//   }
-// }
+    console.log('✅ 摘要报告已发送到 Telegram');
+  } catch (error) {
+    console.error('发送摘要报告到 Telegram 失败:', error.message);
+  }
+}
 
 (async () => {
   let browser;
