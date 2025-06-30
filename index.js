@@ -75,22 +75,22 @@ ${summary}
     // 发送报告
     await bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
     
-    // 将日志作为文件发送
-    await bot.sendDocument(
-      chatId, 
-      Buffer.from(logContent), 
-      {}, 
-      {
-        filename: `hostloc-logs-${format(startTime, 'yyyyMMdd-HHmmss')}.txt`,
-        contentType: 'text/plain'
-      }
-    );
+//     // 将日志作为文件发送
+//     await bot.sendDocument(
+//       chatId, 
+//       Buffer.from(logContent), 
+//       {}, 
+//       {
+//         filename: `hostloc-logs-${format(startTime, 'yyyyMMdd-HHmmss')}.txt`,
+//         contentType: 'text/plain'
+//       }
+//     );
     
-    console.log('✅ 日志已成功发送到 Telegram');
-  } catch (error) {
-    console.error('发送日志到 Telegram 失败:', error.message);
-  }
-}
+//     console.log('✅ 日志已成功发送到 Telegram');
+//   } catch (error) {
+//     console.error('发送日志到 Telegram 失败:', error.message);
+//   }
+// }
 
 (async () => {
   let browser;
