@@ -2,7 +2,7 @@ name: Hostloc Auto Task
 
 on:
   schedule:
-    - cron: '0 8,20 * * *' # UTC时间0点和12点（北京时间8点和20点）
+    - cron: '0 16 * * *' # UTC时间0点和12点（北京时间8点和20点）
   workflow_dispatch:
 
 jobs:
