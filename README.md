@@ -16,6 +16,8 @@
 ## 环境变量
 - `USERNAME`: 论坛用户名
 - `PASSWORD`: 论坛密码
+- TELEGRAM_BOT_TOKEN: 机器人token
+- TELEGRAM_CHAT_ID: 你的tgid
 
 ## GitHub Actions
 工作流文件已配置为自动执行脚本
