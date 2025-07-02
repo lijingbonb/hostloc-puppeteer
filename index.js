@@ -145,7 +145,7 @@ ${summary}
     log('✅ 登录成功!');
 
     // 访问用户空间
-    log('🔄 开始随机访问20个用户空间...');
+    log('🔄 开始访问20个用户空间...');
     let successCount = 0;
     let failCount = 0;
 
@@ -153,18 +153,14 @@ ${summary}
       const randomUid = Math.floor(Math.random() * 31210) + 1;
       const userUrl = `https://www.hostloc.com/space-uid-${randomUid}.html`;
       
-      log(`访问用户空间 #${i+1}: UID-${randomUid}`);
-      
       try {
         await page.goto(userUrl, {
           waitUntil: 'domcontentloaded',
           timeout: 15000
         });
         successCount++;
-        log(`  访问成功: ${userUrl}`);
       } catch (error) {
         failCount++;
-        log(`  访问失败: ${error.message}`);
       }
       
       // 随机延迟（10-15秒）
