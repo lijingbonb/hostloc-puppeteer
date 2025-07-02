@@ -149,7 +149,7 @@ ${summary}
     let successCount = 0;
     let failCount = 0;
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 3; i++) {
       const randomUid = Math.floor(Math.random() * 31210) + 1;
       const userUrl = `https://www.hostloc.com/space-uid-${randomUid}.html`;
       
