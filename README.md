@@ -1,4 +1,4 @@
-# Hostloc Puppeteer 自动化脚本
+# Hostloc Puppeteer 自动化脚本并推送至telegram Bot
 
 ## 最新更新
 - 使用更稳定的元素选择器 `input[name="username"]` 和 `input[name="password"]`
